@@ -1,3 +1,8 @@
+function draw_obstacle () {
+    display.setMatrixColor(track[obstacle_y] + 1, obstacle_y, GAME_ZIP64.colors(ZipLedColors.Blue))
+    display.setMatrixColor(track[obstacle_y] + 2, obstacle_y, GAME_ZIP64.colors(ZipLedColors.Blue))
+    display.setMatrixColor(track[obstacle_y] + 3, obstacle_y, GAME_ZIP64.colors(ZipLedColors.Blue))
+}
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Fire1, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
     if (game_ended == 0) {
         paused = 0
@@ -6,7 +11,9 @@ GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Fire1, GAME_ZIP64.ZIP64Butto
     }
 })
 function collision_check () {
-    if (car_x == track_6 || car_x == track_6 + 4) {
+    hit_wall = car_x == track[6] || car_x == track[6] + 4
+    hit_obstacle = obstacle_y == 6 && jumping == 0
+    if (hit_wall || hit_obstacle) {
         paused = 1
         game_ended = 1
         music.startMelody(music.builtInMelody(Melodies.PowerDown), MelodyOptions.Once)
@@ -14,54 +21,39 @@ function collision_check () {
 }
 function draw () {
     display.clear()
-    display.setMatrixColor(track_0, 0, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_1, 1, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_2, 2, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_3, 3, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_4, 4, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_5, 5, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_6, 6, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_7, 7, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_0 + 4, 0, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_1 + 4, 1, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_2 + 4, 2, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_3 + 4, 3, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_4 + 4, 4, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_7 + 4, 7, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_5 + 4, 5, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(track_6 + 4, 6, GAME_ZIP64.colors(ZipLedColors.Green))
-    display.setMatrixColor(car_x, 6, GAME_ZIP64.colors(ZipLedColors.Red))
+    draw_track()
+    draw_obstacle()
+    if (jumping > 0) {
+        display.setMatrixColor(car_x, 6, GAME_ZIP64.colors(ZipLedColors.Orange))
+    } else {
+        display.setMatrixColor(car_x, 6, GAME_ZIP64.colors(ZipLedColors.Red))
+    }
     display.setBrightness(10)
     display.show()
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Fire2, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
     paused = 1
 })
-function set_next_track (previous_track: number) {
-    if (previous_track == 4) {
-        next_track = previous_track + randint(-1, 0)
-    } else if (previous_track == -1) {
-        next_track = previous_track + randint(0, 1)
-    } else {
-        next_track = previous_track + randint(-1, 1)
-    }
-}
 function create_track () {
-    track_0 = randint(-1, 4)
-    set_next_track(track_0)
-    track_1 = next_track
-    set_next_track(track_1)
-    track_2 = next_track
-    set_next_track(track_2)
-    track_3 = next_track
-    set_next_track(track_3)
-    track_4 = next_track
-    set_next_track(track_4)
-    track_5 = next_track
-    set_next_track(track_5)
-    track_6 = next_track
-    set_next_track(track_6)
-    track_7 = next_track
+    track[7] = randint(-1, 4)
+    update_track_line(6)
+    update_track_line(5)
+    update_track_line(4)
+    update_track_line(3)
+    update_track_line(2)
+    update_track_line(1)
+    update_track_line(0)
+}
+function update_track_line (line: number) {
+    previous = track[line + 1]
+    if (previous == 4) {
+        next_track = previous + randint(-1, 0)
+    } else if (previous == -1) {
+        next_track = previous + randint(0, 1)
+    } else {
+        next_track = previous + randint(-1, 1)
+    }
+    track[line] = next_track
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Left, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
     if (car_x > 0 && paused == 0) {
@@ -71,15 +63,18 @@ GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Left, GAME_ZIP64.ZIP64Button
     }
 })
 function move_track () {
-    track_7 = track_6
-    track_6 = track_5
-    track_5 = track_4
-    track_4 = track_3
-    track_3 = track_2
-    track_2 = track_1
-    track_1 = track_0
-    set_next_track(track_1)
-    track_0 = next_track
+    line = 7
+    for (let index = 0; index < 7; index++) {
+        track[line] = track[line - 1]
+        line += -1
+    }
+    update_track_line(0)
+}
+function draw_track () {
+    for (let line = 0; line <= 7; line++) {
+        display.setMatrixColor(track[line], line, GAME_ZIP64.colors(ZipLedColors.Green))
+        display.setMatrixColor(track[line] + 4, line, GAME_ZIP64.colors(ZipLedColors.Green))
+    }
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Right, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
     if (car_x < 7 && paused == 0) {
@@ -88,25 +83,29 @@ GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Right, GAME_ZIP64.ZIP64Butto
         collision_check()
     }
 })
+GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Up, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
+    jumping = 2
+})
 function new_game () {
     create_track()
+    jumping = 0
     paused = 1
     game_ended = 0
-    car_x = track_6 + 2
+    car_x = track[6] + 2
+    obstacle_y = randint(-5, 4)
     draw()
 }
+let line = 0
 let next_track = 0
-let track_7 = 0
-let track_5 = 0
-let track_4 = 0
-let track_3 = 0
-let track_2 = 0
-let track_1 = 0
-let track_0 = 0
-let track_6 = 0
+let previous = 0
+let jumping = 0
+let hit_obstacle = false
 let car_x = 0
+let hit_wall = false
 let paused = 0
 let game_ended = 0
+let obstacle_y = 0
+let track: number[] = []
 let display: GAME_ZIP64.ZIP64Display = null
 GAME_ZIP64.setBuzzerPin()
 display = GAME_ZIP64.createZIP64Display()
@@ -114,6 +113,13 @@ new_game()
 basic.forever(function () {
     if (paused == 0) {
         move_track()
+        obstacle_y += 1
+        if (obstacle_y == 8) {
+            obstacle_y = randint(-5, 0)
+        }
+        if (jumping > 0) {
+            jumping += -1
+        }
         draw()
         collision_check()
     }
