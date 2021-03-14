@@ -1,6 +1,17 @@
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Fire1, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
-    paused = 0
+    if (game_ended == 0) {
+        paused = 0
+    } else {
+        new_game()
+    }
 })
+function collision_check () {
+    if (car_x == track_6 || car_x == track_6 + 4) {
+        paused = 1
+        game_ended = 1
+        music.startMelody(music.builtInMelody(Melodies.PowerDown), MelodyOptions.Once)
+    }
+}
 function draw () {
     display.clear()
     display.setMatrixColor(track_0, 0, GAME_ZIP64.colors(ZipLedColors.Green))
@@ -53,8 +64,10 @@ function create_track () {
     track_7 = next_track
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Left, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
-    if (car_x > 0) {
+    if (car_x > 0 && paused == 0) {
         car_x += -1
+        draw()
+        collision_check()
     }
 })
 function move_track () {
@@ -69,10 +82,19 @@ function move_track () {
     track_0 = next_track
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Right, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
-    if (car_x < 7) {
+    if (car_x < 7 && paused == 0) {
         car_x += 1
+        draw()
+        collision_check()
     }
 })
+function new_game () {
+    create_track()
+    paused = 1
+    game_ended = 0
+    car_x = track_6 + 2
+    draw()
+}
 let next_track = 0
 let track_7 = 0
 let track_5 = 0
@@ -81,18 +103,19 @@ let track_3 = 0
 let track_2 = 0
 let track_1 = 0
 let track_0 = 0
-let paused = 0
 let track_6 = 0
 let car_x = 0
+let paused = 0
+let game_ended = 0
 let display: GAME_ZIP64.ZIP64Display = null
+GAME_ZIP64.setBuzzerPin()
 display = GAME_ZIP64.createZIP64Display()
-create_track()
-car_x = track_6 + 2
-draw()
+new_game()
 basic.forever(function () {
     if (paused == 0) {
         move_track()
+        draw()
+        collision_check()
     }
-    draw()
-    basic.pause(300)
+    basic.pause(250)
 })
