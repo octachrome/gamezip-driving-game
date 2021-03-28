@@ -56,7 +56,7 @@ function update_track_line (line: number) {
     track[line] = next_track
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Left, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
-    if (car_x > 0 && paused == 0) {
+    if (car_x > track[6] + 1 && paused == 0) {
         car_x += -1
         draw()
         collision_check()
@@ -68,6 +68,7 @@ function move_track () {
         track[line] = track[line - 1]
         line += -1
     }
+    score += 1
     update_track_line(0)
 }
 function draw_track () {
@@ -77,7 +78,7 @@ function draw_track () {
     }
 }
 GAME_ZIP64.onButtonPress(GAME_ZIP64.ZIP64ButtonPins.Right, GAME_ZIP64.ZIP64ButtonEvents.Down, function () {
-    if (car_x < 7 && paused == 0) {
+    if (car_x < track[6] + 3 && paused == 0) {
         car_x += 1
         draw()
         collision_check()
@@ -92,9 +93,11 @@ function new_game () {
     paused = 1
     game_ended = 0
     car_x = track[6] + 2
-    obstacle_y = randint(-5, 4)
+    obstacle_y = randint(-5, 3)
+    score = 0
     draw()
 }
+let score = 0
 let line = 0
 let next_track = 0
 let previous = 0
@@ -124,4 +127,7 @@ basic.forever(function () {
         collision_check()
     }
     basic.pause(250)
+})
+basic.forever(function () {
+    basic.showNumber(Math.trunc(score / 14))
 })
